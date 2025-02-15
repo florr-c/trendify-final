@@ -1,6 +1,9 @@
 import React, { useState } from "react";
-import "../styles.css"; 
-import miImagen from "../assets/img1.png"; 
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { setDoc, doc } from "firebase/firestore";
+import { auth, db } from "../firebaseConfig";
+import "../styles.css";
+import miImagen from "../assets/img1.png";
 
 const RegistrationPage = () => {
   const [formData, setFormData] = useState({
@@ -9,6 +12,8 @@ const RegistrationPage = () => {
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -18,17 +23,61 @@ const RegistrationPage = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Formulario enviado");
-    
+
+    if (formData.password.length <= 6) {
+      setError("La contraseña debe tener más de 6 caracteres.");
+
+      // Ocultar el mensaje de error después de 3 segundos
+      setTimeout(() => {
+        setError("");
+      }, 3000);
+
+      return;
+    }
+
+    try {
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
+
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+      });
+
+      setMessage("¡Registro exitoso!");
+
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+      });
+
+      // Ocultar el mensaje de éxito después de 3 segundos
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    } catch (error) {
+      setError(error.message);
+
+      // Ocultar el mensaje de error después de 3 segundos
+      setTimeout(() => {
+        setError("");
+      }, 3000);
+    }
   };
 
   return (
     <div className="registration-page">
       <div className="left-side">
         <img
-          src={miImagen} 
+          src={miImagen}
           alt="Imagen ilustrativa"
           className="registration-image"
         />
@@ -46,6 +95,7 @@ const RegistrationPage = () => {
               value={formData.firstName}
               onChange={handleChange}
               required
+              title="Por favor complete este campo"
             />
           </div>
           <div className="input-group">
@@ -57,6 +107,7 @@ const RegistrationPage = () => {
               value={formData.lastName}
               onChange={handleChange}
               required
+              title="Por favor complete este campo"
             />
           </div>
           <div className="input-group">
@@ -68,6 +119,7 @@ const RegistrationPage = () => {
               value={formData.email}
               onChange={handleChange}
               required
+              title="Por favor complete este campo"
             />
           </div>
           <div className="input-group">
@@ -79,12 +131,17 @@ const RegistrationPage = () => {
               value={formData.password}
               onChange={handleChange}
               required
+              title="Por favor complete este campo"
             />
           </div>
-          <button type="submit" className="submit-btn">
+          <button
+            type="submit"
+            className="submit-btn">
             Registrar
           </button>
         </form>
+        {message && <p>{message}</p>}
+        {error && <p>{error}</p>}
       </div>
     </div>
   );

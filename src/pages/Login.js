@@ -1,12 +1,16 @@
 import React, { useState } from "react";
-import "../styles.css"; 
-import miImagen from "../assets/img2.png"; 
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebaseConfig";
+import "../styles.css";
+import miImagen from "../assets/img2.png";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -16,17 +20,33 @@ const Login = () => {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    alert("Login exitoso!");
+    try {
+      setError("");
+
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
+      setMessage("Login exitoso!");
+
+      setFormData({
+        email: "",
+        password: "",
+      });
+
+      setTimeout(() => {
+        setMessage("");
+      }, 3000);
+    } catch (error) {
+      setMessage("");
+      setError("Usuario no registrado o contraseña incorrecta");
+    }
   };
 
   return (
     <div className="login-page">
-
-<div className="left-side">
+      <div className="left-side">
         <img
-          src={miImagen} 
+          src={miImagen}
           alt="Imagen Ilustracion"
           className="registration-image"
         />
@@ -54,12 +74,17 @@ const Login = () => {
               required
             />
           </div>
-          <button type="submit" className="submit-btn">Ingresar</button>
+          <button
+            type="submit"
+            className="submit-btn">
+            Ingresar
+          </button>
         </form>
+        {message && <p>{message}</p>}
+        {error && <p>{error}</p>}
       </div>
     </div>
   );
 };
 
 export default Login;
-
